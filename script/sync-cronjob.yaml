@@ -1,0 +1,49 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: document-sync
+  namespace: ob-robot
+spec:
+  concurrencyPolicy: Forbid
+  schedule: "*/10 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          volumes:
+            - name: ssh-key-volume
+              secret:
+                secretName: my-ssh-key
+                defaultMode: 256
+          containers:
+            - name: document-sync
+              image: #/ob-robot/reposyncer:v0.0.1
+              imagePullPolicy: IfNotPresent
+              command:
+                - python3
+                - sync.py
+              env:
+                - name: BOOT_MODE
+                  value: "sync"
+                - name: WEB_CONCURRENCY
+                  value: "4"
+                - name: SYS_ENV
+                  value: "DEV"
+                - name: CEROBOT_MYSQL_HOST
+                  value: ""
+                - name: CEROBOT_MYSQL_PORT
+                  value: ""
+                - name: CEROBOT_MYSQL_USER
+                  value: ""
+                - name: CEROBOT_MYSQL_PWD
+                  value: ""
+                - name: CEROBOT_MYSQL_DB
+                  value: ""
+                - name: BUC_KEY
+                  value: "OBRDE_DEV_USER_SIGN"
+                - name: SYS_ENV
+                  value: "DEV"
+              volumeMounts:
+                - name: ssh-key-volume
+                  mountPath: "/root/.ssh/"
+          restartPolicy: OnFailure

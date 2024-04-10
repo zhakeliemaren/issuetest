@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: ob-robot-frontend
+  namespace: ob-robot
+  labels:
+    k8s-app: ob-robot-frontend
+spec:
+  selector:
+    k8s-app: ob-robot-frontend
+  ports:
+    - port: 80
+      targetPort: 8080

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reposyncer-test-backend
+  namespace: reposyncer-test
+spec:
+  selector:
+    matchLabels:
+      k8s-app: reposyncer-test-backend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: reposyncer-test-backend
+    spec:
+      containers:
+        - name: reposyncer
+          image: #/ob-robot/reposyncer:v0.0.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: BOOT_MODE
+              value: "app"
+            - name: WEB_CONCURRENCY
+              value: "4"
+            - name: SYS_ENV
+              value: "DEV"
+            - name: CEROBOT_MYSQL_HOST
+              value: ""
+            - name: CEROBOT_MYSQL_PORT
+              value: ""
+            - name: CEROBOT_MYSQL_USER
+              value: ""
+            - name: CEROBOT_MYSQL_PWD
+              value: ""
+            - name: CEROBOT_MYSQL_DB
+              value: ""
+            - name: BUC_KEY
+              value: "OBRDE_DEV_USER_SIGN"

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reposyncer-conf
+  namespace: reposyncer
+  labels:
+    name: reposyncer-conf
+data:
+  env.ini: |
+    export SYS_ENV=DEV
+    export LOG_PATH=
+    export LOG_LV=DEBUG
+
+    # 后端数据库配置
+    export CEROBOT_MYSQL_HOST=
+    export CEROBOT_MYSQL_PORT=
+    export CEROBOT_MYSQL_USER=""
+    export CEROBOT_MYSQL_PWD=""
+    export CEROBOT_MYSQL_DB=""
+
+    # 对称加密密钥
+    export DATA_ENCRYPT_KEY=
+
+    # 运行构建任务容器名
+    export EL8_DOCKER_IMAGE=''
+    export EL7_DOCKER_IMAGE=''
+    # authentication
+    export BUC_KEY=OBRDE_DEV_USER_SIGN

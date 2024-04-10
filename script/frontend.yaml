@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ob-robot-frontend
+  namespace: ob-robot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: ob-robot-frontend
+  template:
+    metadata:
+      labels:
+        k8s-app: ob-robot-frontend
+    spec:
+      containers:
+        - name: ob-robot-frontend
+          image: #/ob-robot/frontend:v0.0.14
+          imagePullPolicy: Always
+          ports:
+           - containerPort: 8080
