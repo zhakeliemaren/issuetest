@@ -3,7 +3,7 @@ from sqlalchemy.exc import NoResultFound
 from src.do.sync_config import SyncBranchMapping, SyncRepoMapping, LogDO
 from .mysql_ao import MysqlAO
 from src.utils.base import Singleton
-from src.dto.sync_config import AllRepoDTO, GetBranchDTO, SyncRepoDTO, SyncBranchDTO, RepoDTO
+from src.dto.sync_config import AllRepoDTO, GetBranchDTO, SyncRepoDTO, SyncBranchDTO, RepoDTO, BranchDTO
 from typing import List
 from src.do.sync_config import SyncDirect, SyncType
 
@@ -143,17 +143,18 @@ class SyncBranchDAO(BaseDAO, metaclass=Singleton):
     def __init__(self, *args, **kwargs):
         super().__init__(SyncBranchMapping, *args, **kwargs)
 
-    async def create_branch(self, dto: SyncBranchDTO, repo_id: int) -> SyncBranchDTO:
+    async def create_branch(self, dto: SyncBranchDTO, repo_id: int) -> BranchDTO:
         async with self._async_session() as session:
             async with session.begin():
                 do = SyncBranchMapping(**dto.dict(), repo_id=repo_id)
                 session.add(do)
-                data = SyncBranchDTO(
+                await session.commit()
+                data = BranchDTO(
+                    id=do.id,
                     enable=do.enable,
                     internal_branch_name=do.internal_branch_name,
                     external_branch_name=do.external_branch_name
                 )
-                await session.commit()
                 return data
 
     async def get_sync_branch(self, repo_id: int, page_number: int, page_size: int, create_sort: bool) -> List[GetBranchDTO]:

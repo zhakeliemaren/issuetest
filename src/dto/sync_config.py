@@ -17,6 +17,13 @@ class SyncBranchDTO(BaseModel):
     external_branch_name: str = Field(..., description="外部仓库分支名")
 
 
+class BranchDTO(BaseModel):
+    id: int = Field(..., description="分支id")
+    enable: bool = Field(..., description="是否启用分支同步")
+    internal_branch_name: str = Field(..., description="内部仓库分支名")
+    external_branch_name: str = Field(..., description="外部仓库分支名")
+
+
 class RepoDTO(BaseModel):
     enable: bool = Field(..., description="是否启用同步")
     repo_name: str = Field(..., description="仓库名称")

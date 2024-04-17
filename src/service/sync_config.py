@@ -2,7 +2,7 @@ import re
 from typing import List, Union, Optional, Dict
 from .service import Service
 from src.dao.sync_config import SyncBranchDAO, SyncRepoDAO, LogDAO
-from src.dto.sync_config import SyncBranchDTO, SyncRepoDTO, RepoDTO, AllRepoDTO, GetBranchDTO, LogDTO
+from src.dto.sync_config import SyncBranchDTO, SyncRepoDTO, RepoDTO, AllRepoDTO, GetBranchDTO, LogDTO, BranchDTO
 from src.do.sync_config import SyncDirect, SyncType
 from src.base.status_code import Status, SYNCException
 from src.utils.sync_log import log_path
@@ -37,7 +37,7 @@ class SyncService(Service):
             raise SYNCException(Status.BRANCH_EXISTS)
         return repo.id
 
-    async def create_branch(self, dto: SyncBranchDTO, repo_id: int) -> Optional[SyncBranchDTO]:
+    async def create_branch(self, dto: SyncBranchDTO, repo_id: int) -> Optional[BranchDTO]:
         branch = await self.sync_branch_dao.create_branch(dto, repo_id=repo_id)
         return branch
 
