@@ -14,7 +14,7 @@ from src.utils.sync_log import sync_log, LogType, api_log
 from src.api.Controller import APIController as Controller
 from src.router import SYNC_CONFIG as router
 from src.do.sync_config import SyncDirect
-from src.dto.sync_config import SyncRepoDTO, SyncBranchDTO, LogDTO
+from src.dto.sync_config import SyncRepoDTO, SyncBranchDTO, LogDTO, ModifyRepoDTO
 from src.service.sync_config import SyncService, LogService
 from src.service.cronjob import sync_repo_task, sync_branch_task
 from src.base.status_code import Status, SYNCResponse, SYNCException
@@ -208,6 +208,19 @@ class SyncDirection(Controller):
     ):
         api_log(LogType.INFO, f"用户 {user} 使用 DELETE 方法访问接口 {request.url.path} ", user)
         data = await self.service.delete_branch(repo_name=repo_name, branch_name=branch_name)
+        return SYNCResponse(
+            code_status=data.code_status,
+            msg=data.status_msg
+        )
+
+    @router.put("/repo/{repo_name}/repo_addr", response_model=SYNCResponse, description='更新仓库地址')
+    async def update_repo_addr(
+            self, request: Request, user: str = Depends(user),
+            repo_name: str = Path(..., description="仓库名称"),
+            dto: ModifyRepoDTO = Body(..., description="更新仓库地址信息")
+    ):
+        api_log(LogType.INFO, f"用户 {user} 使用 PUT 方法访问接口 {request.url.path} ", user)
+        data = await self.service.update_repo_addr(repo_name=repo_name, dto=dto)
         return SYNCResponse(
             code_status=data.code_status,
             msg=data.status_msg

@@ -6,9 +6,18 @@ class SyncRepoDTO(BaseModel):
     repo_name: str = Field(..., description="仓库名称")
     enable: bool = Field(..., description="同步状态")
     internal_repo_address: str = Field(..., description="内部仓库地址")
+    inter_token: str = Field(None, description="内部仓库token")
     external_repo_address: str = Field(..., description="外部仓库地址")
+    exter_token: str = Field(None, description="外部仓库token")
     sync_granularity: int = Field(..., description="1 为仓库粒度的同步, 2 为分支粒度的同步")
     sync_direction: int = Field(..., description="1 表示内部仓库同步到外部, 2 表示外部仓库同步到内部")
+
+
+class ModifyRepoDTO(BaseModel):
+    internal_repo_address: str = Field(None, description="内部仓库地址")
+    inter_token: str = Field(None, description="内部仓库token")
+    external_repo_address: str = Field(None, description="外部仓库地址")
+    exter_token: str = Field(None, description="外部仓库token")
 
 
 class SyncBranchDTO(BaseModel):

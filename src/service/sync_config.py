@@ -1,8 +1,9 @@
 import re
 from typing import List, Union, Optional, Dict
 from .service import Service
+from src.utils import base
 from src.dao.sync_config import SyncBranchDAO, SyncRepoDAO, LogDAO
-from src.dto.sync_config import SyncBranchDTO, SyncRepoDTO, RepoDTO, AllRepoDTO, GetBranchDTO, LogDTO, BranchDTO
+from src.dto.sync_config import SyncBranchDTO, SyncRepoDTO, RepoDTO, AllRepoDTO, GetBranchDTO, LogDTO, BranchDTO, ModifyRepoDTO
 from src.do.sync_config import SyncDirect, SyncType
 from src.base.status_code import Status, SYNCException
 from src.utils.sync_log import log_path
@@ -103,6 +104,26 @@ class SyncService(Service):
         for branch in branches:
             await self.sync_branch_dao.delete(branch)
 
+        return SYNCException(Status.SUCCESS)
+
+    async def update_repo_addr(self, repo_name: str, dto: ModifyRepoDTO) -> SYNCException:
+        repo = await self.sync_repo_dao.get(repo_name=repo_name)
+        if repo is None:
+            return SYNCException(Status.REPO_NOTFOUND)
+        update_fields = {}
+        if dto.internal_repo_address is not None:
+            if not base.check_addr(dto.internal_repo_address):
+                return SYNCException(Status.REPO_ADDR_ILLEGAL)
+            update_fields['internal_repo_address'] = dto.internal_repo_address
+        if dto.external_repo_address is not None:
+            if not base.check_addr(dto.external_repo_address):
+                return SYNCException(Status.REPO_ADDR_ILLEGAL)
+            update_fields['external_repo_address'] = dto.external_repo_address
+        if dto.inter_token is not None:
+            update_fields['inter_token'] = dto.inter_token
+        if dto.exter_token is not None:
+            update_fields['exter_token'] = dto.exter_token
+        await self.sync_repo_dao.update(repo, **update_fields)
         return SYNCException(Status.SUCCESS)
 
     async def update_repo(self, repo_name: str, enable: bool) -> SYNCException:

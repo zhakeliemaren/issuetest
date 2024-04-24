@@ -1,12 +1,15 @@
 import re
 
-GIT_HTTP_PATTERN = r'https://.*.com/(.*)/(.*).git'
+GIT_HTTPS_PATTERN = r'https://.*.com/(.*)/(.*).git'
+GIT_HTTP_PATTERN = r'http://.*.com/(.*)/(.*).git'
 GIT_SSH_PATTERN = r'git@.*.com:(.*)/(.*).git'
 
 
 def check_addr(repo_address: str) -> bool:
     try:
         if repo_address.startswith('https'):
+            pattern = GIT_HTTPS_PATTERN
+        elif repo_address.startswith('http'):
             pattern = GIT_HTTP_PATTERN
         else:
             pattern = GIT_SSH_PATTERN
