@@ -3,7 +3,7 @@ from sqlalchemy.exc import NoResultFound
 from src.do.sync_config import SyncBranchMapping, SyncRepoMapping, LogDO
 from .mysql_ao import MysqlAO
 from src.utils.base import Singleton
-from src.dto.sync_config import AllRepoDTO, GetBranchDTO, SyncRepoDTO, SyncBranchDTO, RepoDTO, BranchDTO
+from src.dto.sync_config import AllRepoDTO, GetBranchDTO, SyncRepoDTO, SyncBranchDTO, RepoDTO, BranchDTO, LogDTO
 from typing import List
 from src.do.sync_config import SyncDirect, SyncType
 
@@ -231,6 +231,14 @@ class LogDAO(BaseDAO, metaclass=Singleton):
                 session.add(do)
             await session.commit()
 
+    async def insert_sync_repo_log(self, repo_name, direct, log_content, first_time, last_time):
+        async with self._async_session() as session:
+            async with session.begin():
+                do = LogDO(repo_name=repo_name, sync_direct=direct, log=log_content,
+                           created_at=first_time, update_at=last_time)
+                session.add(do)
+            await session.commit()
+
     async def update_sync_repo_log(self, repo_name, direct, log_content):
         async with self._async_session() as session:
             async with session.begin():
@@ -253,6 +261,14 @@ class LogDAO(BaseDAO, metaclass=Singleton):
                 session.add(do)
             await session.commit()
 
+    async def insert_branch_log(self, repo_name, direct, branch_id, commit_id, log_content, first_time, last_time):
+        async with self._async_session() as session:
+            async with session.begin():
+                do = LogDO(repo_name=repo_name, sync_direct=direct, branch_id=branch_id,
+                           commit_id=commit_id, log=log_content, created_at=first_time, update_at=last_time)
+                session.add(do)
+            await session.commit()
+
     async def update_branch_log(self, repo_name, direct, branch_id, commit_id, log_content):
         async with self._async_session() as session:
             async with session.begin():
@@ -267,3 +283,24 @@ class LogDAO(BaseDAO, metaclass=Singleton):
                 await session.execute(stmt)
             await session.commit()
 
+    async def get_log(self, repo_name: str, branch_id: int, page_number: int, page_size: int, create_sort: bool) -> List[LogDTO]:
+        async with self._async_session() as session:
+            async with session.begin():
+                stmt = select(LogDO).where(LogDO.repo_name == repo_name, LogDO.branch_id == branch_id)
+                create_order = LogDO.created_at if create_sort else LogDO.created_at.desc()
+                stmt = stmt.order_by(create_order).offset((page_number - 1) * page_size).limit(page_size)
+                do_list: List[LogDO] = (await session.execute(stmt)).scalars().all()
+                datas = []
+                for do in do_list:
+                    data = LogDTO(
+                        id=do.id,
+                        branch_id=do.branch_id,
+                        repo_name=do.repo_name,
+                        commit_id=do.commit_id,
+                        sync_direct=do.sync_direct.name,
+                        log=str(do.log),
+                        created_at=str(do.created_at),
+                        update_at=str(do.update_at)
+                    )
+                    datas.append(data)
+                return datas

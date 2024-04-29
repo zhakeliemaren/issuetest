@@ -24,6 +24,7 @@ class Status(Enum):
     BRANCH_DELETE = (10012, "仓库中不存在此分支")
     NOT_DATA = (10013, "没有数据")
     GRANULARITY = (10014, "仓库粒度同步，没有分支信息")
+    CHECK_IN = (10015, "请检查输入的仓库和分支ID信息是否对应")
     # git执行异常
     PERMISSION_DENIED = (20001, "SSH 密钥未授权或未添加")
     REPO_NOT_FOUND = (20002, "仓库不存在或私有仓库访问权限不足")

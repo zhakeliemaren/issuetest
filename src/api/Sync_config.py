@@ -257,10 +257,19 @@ class SyncDirection(Controller):
     async def get_logs(
             self, request: Request, user: str = Depends(user),
             repo_name: str = Path(..., description="仓库名称"),
-            branch_id: int = Query(None, description="分支id（仓库粒度无需输入）")
+            branch_id: int = Query(None, description="分支id（仓库粒度无需输入）"),
+            page_num: int = Query(1, description="页数"), page_size: int = Query(10, description="条数"),
+            create_sort: bool = Query(False, description="创建时间排序， 默认倒序")
     ):
         api_log(LogType.INFO, f"用户 {user} 使用 GET 方法访问接口 {request.url.path} ", user)
-        data = await self.log_service.get_logs(repo_name=repo_name, branch_id=branch_id)
+        data = await self.log_service.get_logs(repo_name=repo_name, branch_id=branch_id,
+                                               page_num=page_num, page_size=page_size, create_sort=create_sort)
+        if not data:
+            return SYNCResponse(
+                code_status=Status.CHECK_IN.code,
+                data=data,
+                msg=Status.CHECK_IN.msg
+            )
         return SYNCResponse(
             code_status=Status.SUCCESS.code,
             data=data,

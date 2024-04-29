@@ -2,6 +2,7 @@ import re
 from typing import List, Union, Optional, Dict
 from .service import Service
 from src.utils import base
+from datetime import datetime
 from src.dao.sync_config import SyncBranchDAO, SyncRepoDAO, LogDAO
 from src.dto.sync_config import SyncBranchDTO, SyncRepoDTO, RepoDTO, AllRepoDTO, GetBranchDTO, LogDTO, BranchDTO, ModifyRepoDTO
 from src.do.sync_config import SyncDirect, SyncType
@@ -166,12 +167,18 @@ class LogService(Service):
         log_history = f"{log_path}/sync_{repo_name}_history.log"
         with open(log_history, 'a') as log_:
             log_.write(log_content)
-        stm = {"repo_name": repo_name, "branch_id": None, "commit_id": None}
-        log = await self.sync_log_dao.filter(**stm)
-        if len(log) < 1:
-            await self.sync_log_dao.init_sync_repo_log(repo_name=repo_name, direct=direct, log_content=log_content)
-        else:
-            await self.sync_log_dao.update_sync_repo_log(repo_name=repo_name, direct=direct, log_content=log_content)
+        # 使用正则表达式匹配所有的日期和时间格式
+        timestamps = re.findall(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', log_content)
+        first_time = timestamps[0] if timestamps else datetime.now()
+        last_time = timestamps[-1] if timestamps else datetime.now()
+        await self.sync_log_dao.insert_sync_repo_log(repo_name=repo_name, direct=direct, log_content=log_content,
+                                                     first_time=first_time, last_time=last_time)
+        # stm = {"repo_name": repo_name, "branch_id": None, "commit_id": None}
+        # log = await self.sync_log_dao.filter(**stm)
+        # if len(log) < 1:
+        #     await self.sync_log_dao.init_sync_repo_log(repo_name=repo_name, direct=direct, log_content=log_content)
+        # else:
+        #     await self.sync_log_dao.update_sync_repo_log(repo_name=repo_name, direct=direct, log_content=log_content)
 
     async def insert_branch_log(self, repo_name: str, direct: str, branch_id: int, commit_id: str):
         addr = f"{log_path}/sync_{repo_name}_{branch_id}.log"
@@ -180,28 +187,20 @@ class LogService(Service):
         log_history = f"{log_path}/sync_{repo_name}_{branch_id}_history.log"
         with open(log_history, 'a') as log_:
             log_.write(log_content)
-        stm = {"repo_name": repo_name, "branch_id": branch_id}
-        log = await self.sync_log_dao.filter(**stm)
-        if len(log) < 1:
-            await self.sync_log_dao.init_branch_log(repo_name, direct, branch_id, commit_id, log_content)
-        else:
-            await self.sync_log_dao.update_branch_log(repo_name, direct, branch_id, commit_id, log_content)
+        # 使用正则表达式匹配所有的日期和时间格式
+        timestamps = re.findall(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', log_content)
+        first_time = timestamps[0] if timestamps else datetime.now()
+        last_time = timestamps[-1] if timestamps else datetime.now()
+        await self.sync_log_dao.insert_branch_log(repo_name, direct, branch_id, commit_id,
+                                                  log_content, first_time, last_time)
+        # stm = {"repo_name": repo_name, "branch_id": branch_id}
+        # log = await self.sync_log_dao.filter(**stm)
+        # if len(log) < 1:
+        #     await self.sync_log_dao.init_branch_log(repo_name, direct, branch_id, commit_id, log_content)
+        # else:
+        #     await self.sync_log_dao.update_branch_log(repo_name, direct, branch_id, commit_id, log_content)
 
-    async def get_logs(self, repo_name: str, branch_id: int) -> Optional[List[LogDTO]]:
-        stm = {"repo_name": repo_name, "branch_id": branch_id}
-        logs_repo = await self.sync_log_dao.filter(**stm)
-        datas = []
-        for do in logs_repo:
-            data = LogDTO(
-                id=do.id,
-                branch_id=do.branch_id,
-                repo_name=do.repo_name,
-                commit_id=do.commit_id,
-                sync_direct=do.sync_direct.name,
-                log=str(do.log),
-                # log_history=str(do.log_history),
-                created_at=str(do.created_at),
-                update_at=str(do.update_at)
-            )
-            datas.append(data)
-        return datas
+    async def get_logs(self, repo_name: str, branch_id: int, page_num: int, page_size: int, create_sort: bool) -> Optional[List[LogDTO]]:
+        logs = await self.sync_log_dao.get_log(repo_name=repo_name, branch_id=branch_id,
+                                               page_number=page_num, page_size=page_size, create_sort=create_sort)
+        return logs

@@ -56,7 +56,7 @@ class LogDO(DataObject):
     sync_direct = Column(Enum(SyncDirect), comment="同步方向")
     log = Column(Text, comment="同步日志")
     # log_history = Column(Text, comment="历史日志")
-    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'), comment="创建时间")
-    update_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'), comment="更新时间")
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'), comment="同步执行时间")
+    update_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'), comment="同步结束时间")
 
 
