@@ -2,7 +2,7 @@ import re
 from typing import List, Union, Optional, Dict
 from .service import Service
 from src.utils import base
-from datetime import datetime
+from datetime import datetime, timedelta
 from src.dao.sync_config import SyncBranchDAO, SyncRepoDAO, LogDAO
 from src.dto.sync_config import SyncBranchDTO, SyncRepoDTO, RepoDTO, AllRepoDTO, GetBranchDTO, LogDTO, BranchDTO, ModifyRepoDTO
 from src.do.sync_config import SyncDirect, SyncType
@@ -156,6 +156,13 @@ class SyncService(Service):
         return SYNCException(Status.SUCCESS)
 
 
+def time_trans(original_time_str):
+    original_time = datetime.strptime(original_time_str, '%Y-%m-%d %H:%M:%S')
+    new_time = original_time + timedelta(hours=8)
+    new_time_str = new_time.strftime('%Y-%m-%d %H:%M:%S')
+    return new_time_str
+
+
 class LogService(Service):
     def __init__(self) -> None:
         self.sync_log_dao = LogDAO()
@@ -169,6 +176,8 @@ class LogService(Service):
             log_.write(log_content)
         # 使用正则表达式匹配所有的日期和时间格式
         timestamps = re.findall(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', log_content)
+        # first_time = time_trans(timestamps[0]) if timestamps else datetime.now()
+        # last_time = time_trans(timestamps[-1]) if timestamps else datetime.now()
         first_time = timestamps[0] if timestamps else datetime.now()
         last_time = timestamps[-1] if timestamps else datetime.now()
         await self.sync_log_dao.insert_sync_repo_log(repo_name=repo_name, direct=direct, log_content=log_content,
@@ -189,6 +198,8 @@ class LogService(Service):
             log_.write(log_content)
         # 使用正则表达式匹配所有的日期和时间格式
         timestamps = re.findall(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', log_content)
+        # first_time = time_trans(timestamps[0]) if timestamps else datetime.now()
+        # last_time = time_trans(timestamps[-1]) if timestamps else datetime.now()
         first_time = timestamps[0] if timestamps else datetime.now()
         last_time = timestamps[-1] if timestamps else datetime.now()
         await self.sync_log_dao.insert_branch_log(repo_name, direct, branch_id, commit_id,

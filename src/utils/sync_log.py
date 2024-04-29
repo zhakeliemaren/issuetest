@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+from datetime import datetime, timezone, timedelta
 
 basedir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -16,12 +17,23 @@ api_log_name = os.path.join(
 sync_log_name = os.path.join(
     log_path, f'{time.strftime("%Y-%m-%d")}_sync.log')
 
+# 创建一个时区为UTC+8的timezone对象
+utc_plus_8_timezone = timezone(timedelta(hours=8))
+
 
 class LogType:
     INFO = 'info'
     ERROR = 'ERROR'
     WARNING = 'warning'
     DEBUG = "debug"
+
+
+# 自定义时间格式函数，不依赖于系统时区
+def time_formatter(timestamp):
+    # 将时间戳转换为UTC+8时区的时间
+    utc_time = datetime.fromtimestamp(timestamp, utc_plus_8_timezone)
+    # 将datetime对象转换为time.struct_time
+    return utc_time.timetuple()
 
 
 def sync_log(log_type: str, msg: str, log_name: str, user="robot"):
@@ -33,6 +45,7 @@ def sync_log(log_type: str, msg: str, log_name: str, user="robot"):
     # 创建一个格式化器，指定日志格式
     formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(op_name)s - %(message)s',
                                   datefmt='%Y-%m-%d %H:%M:%S')
+    formatter.converter = time_formatter
     file_handler.setFormatter(formatter)
 
     # 创建一个logger
