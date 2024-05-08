@@ -188,14 +188,17 @@ SYNC_DIR = os.getenv("SYNC_DIR", "/tmp/sync_dir/")
 注: 仓库由内到外同步时，分支输入内部仓库分支名；仓库由外到内同步时，分支输入外部仓库分支名；
 
 ## 日志信息获取
-允许用户通过此接口获取仓库/分支的同步日志。
+允许用户通过此接口分页、使用多个分支ID，获取仓库/分支的同步日志。
 
 - **URL**：`/cerobot/sync/repo/{repo_name}/logs`
 - **Method**：`GET`
 ### 请求参数（body）
-| 参数        | 类型     | 示例输入 | 是否必须 | 说明   |
-|-----------|--------| --- |------|------|
-| repo_name | string |  | yes  | 仓库名称 |
-| branch_id  | int    |  | no   | 分支id |
+| 参数           | 类型     | 示例输入    | 是否必须 | 说明 |
+|--------------|--------|---------|------| --- |
+| repo_name    | string |         | yes  | 仓库名称 |
+| branch_id    | string | 1,2,3   | no   | 分支id |
+| page_num     | int    | 默认1     | no   | 页数 |
+| page_size    | int    | 默认10    | no   | 条数   |
+| create_sort  | bool   | 默认False | no   |创建时间排序， 默认倒序|
 
 注: 获取仓库粒度的同步日志时无需输入分支id；

@@ -211,7 +211,7 @@ class LogService(Service):
         # else:
         #     await self.sync_log_dao.update_branch_log(repo_name, direct, branch_id, commit_id, log_content)
 
-    async def get_logs(self, repo_name: str, branch_id: int, page_num: int, page_size: int, create_sort: bool) -> Optional[List[LogDTO]]:
-        logs = await self.sync_log_dao.get_log(repo_name=repo_name, branch_id=branch_id,
+    async def get_logs(self, repo_name: str, branch_id_list: List[str], page_num: int, page_size: int, create_sort: bool) -> Optional[List[LogDTO]]:
+        logs = await self.sync_log_dao.get_log(repo_name=repo_name, branch_id_list=branch_id_list,
                                                page_number=page_num, page_size=page_size, create_sort=create_sort)
         return logs

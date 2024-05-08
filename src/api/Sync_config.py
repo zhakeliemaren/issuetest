@@ -16,7 +16,7 @@ from src.router import SYNC_CONFIG as router
 from src.do.sync_config import SyncDirect
 from src.dto.sync_config import SyncRepoDTO, SyncBranchDTO, LogDTO, ModifyRepoDTO
 from src.service.sync_config import SyncService, LogService
-from src.service.cronjob import sync_repo_task, sync_branch_task
+from src.service.cronjob import sync_repo_task, sync_branch_task, modify_repos
 from src.base.status_code import Status, SYNCResponse, SYNCException
 from src.service.cronjob import GITMSGException
 
@@ -219,8 +219,15 @@ class SyncDirection(Controller):
             repo_name: str = Path(..., description="仓库名称"),
             dto: ModifyRepoDTO = Body(..., description="更新仓库地址信息")
     ):
-        api_log(LogType.INFO, f"用户 {user} 使用 PUT 方法访问接口 {request.url.path} ", user)
+        api_log(LogType.INFO, f"用户 {user} 使用 PUT 方法访问接口 {request.url.path} 更新仓库信息", user)
         data = await self.service.update_repo_addr(repo_name=repo_name, dto=dto)
+        try:
+            await modify_repos(repo_name, user)
+        except GITMSGException as GITError:
+            return SYNCResponse(
+                code_status=GITError.status,
+                msg=GITError.msg
+            )
         return SYNCResponse(
             code_status=data.code_status,
             msg=data.status_msg
@@ -257,12 +264,13 @@ class SyncDirection(Controller):
     async def get_logs(
             self, request: Request, user: str = Depends(user),
             repo_name: str = Path(..., description="仓库名称"),
-            branch_id: int = Query(None, description="分支id（仓库粒度无需输入）"),
+            branch_id: str = Query(None, description="分支id（仓库粒度无需输入）"),
             page_num: int = Query(1, description="页数"), page_size: int = Query(10, description="条数"),
             create_sort: bool = Query(False, description="创建时间排序， 默认倒序")
     ):
         api_log(LogType.INFO, f"用户 {user} 使用 GET 方法访问接口 {request.url.path} ", user)
-        data = await self.log_service.get_logs(repo_name=repo_name, branch_id=branch_id,
+        branch_id_list = branch_id.split(',')
+        data = await self.log_service.get_logs(repo_name=repo_name, branch_id_list=branch_id_list,
                                                page_num=page_num, page_size=page_size, create_sort=create_sort)
         if not data:
             return SYNCResponse(

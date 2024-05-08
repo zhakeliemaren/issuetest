@@ -1,4 +1,4 @@
-from sqlalchemy import select, update, func
+from sqlalchemy import select, update, func, and_, or_
 from sqlalchemy.exc import NoResultFound
 from src.do.sync_config import SyncBranchMapping, SyncRepoMapping, LogDO
 from .mysql_ao import MysqlAO
@@ -283,13 +283,17 @@ class LogDAO(BaseDAO, metaclass=Singleton):
                 await session.execute(stmt)
             await session.commit()
 
-    async def get_log(self, repo_name: str, branch_id: int, page_number: int, page_size: int, create_sort: bool) -> List[LogDTO]:
+    async def get_log(self, repo_name: str, branch_id_list: List[str], page_number: int, page_size: int, create_sort: bool) -> List[LogDTO]:
         async with self._async_session() as session:
             async with session.begin():
-                stmt = select(LogDO).where(LogDO.repo_name == repo_name, LogDO.branch_id == branch_id)
+                branch_id_list = [int(branch_id) for branch_id in branch_id_list]
+                query = select(LogDO).where(LogDO.repo_name == repo_name, LogDO.branch_id.in_(branch_id_list))
+                # stmt = select(LogDO).where(LogDO.repo_name == repo_name, LogDO.branch_id == branch_id)
+                # stmt = stmt.order_by(create_order).offset((page_number - 1) * page_size).limit(page_size)
                 create_order = LogDO.created_at if create_sort else LogDO.created_at.desc()
-                stmt = stmt.order_by(create_order).offset((page_number - 1) * page_size).limit(page_size)
-                do_list: List[LogDO] = (await session.execute(stmt)).scalars().all()
+                query = query.order_by(create_order)
+                query = query.offset((page_number - 1) * page_size).limit(page_size)
+                do_list: List[LogDO] = (await session.execute(query)).scalars().all()
                 datas = []
                 for do in do_list:
                     data = LogDTO(

@@ -9,7 +9,7 @@ from src.base.config import SYNC_DIR
 from src.dao.sync_config import SyncRepoDAO, SyncBranchDAO
 from src.do.sync_config import SyncDirect, SyncType
 from src.dto.sync_config import SyncBranchDTO
-from src.utils.sync_log import sync_log, LogType, log_path
+from src.utils.sync_log import sync_log, LogType, log_path, api_log
 from src.service.sync_config import LogService
 
 sync_repo_dao = SyncRepoDAO()
@@ -46,8 +46,8 @@ def shell(cmd, dire: str, log_name: str, user: str):
     log = f'Execute cmd: ' + cmd
     if 'git clone' in log:
         sync_log(LogType.INFO, 'Execute cmd: git clone', log_name, user)
-    elif 'git remote add' in log:
-        sync_log(LogType.INFO, 'Execute cmd: git remote add', log_name, user)
+    elif 'git remote' in log:
+        sync_log(LogType.INFO, '添加/更新仓库信息', log_name, user)
     elif 'git ls-remote' in log:
         sync_log(LogType.INFO, '获取仓库分支信息', log_name, user)
     else:
@@ -84,34 +84,44 @@ def inter_to_outer(repo, branch, log_name: str, user: str):
     repo_dir = os.path.join(SYNC_DIR, repo.repo_name)
     inter_name = branch.internal_branch_name
     outer_name = branch.external_branch_name
-    # 从internal仓库的指定分支inter_name中获取代码，更新远程分支的信息到本地仓库
-    shell(f"git fetch internal {inter_name}", repo_dir, log_name, user)
-    # 切换到inter_name分支，并将internal仓库的分支强制 checkout 到当前分支。
-    shell(f"git checkout -B {inter_name} internal/{inter_name}", repo_dir, log_name, user)
-    # 将本地仓库的inter_name分支推送到external仓库的outer_name分支上。
-    shell(f"git push external {inter_name}:{outer_name}", repo_dir, log_name, user)
-    # commit id
-    result = shell(f"git log HEAD~1..HEAD --oneline", repo_dir, log_name, user)
-    commit_id = result.stdout.split(" ")[0]
-    sync_log(LogType.INFO, f'[COMMIT ID: {commit_id}]', log_name, user)
-    return commit_id
+    try:
+        # 从internal仓库的指定分支inter_name中获取代码，更新远程分支的信息到本地仓库
+        shell(f"git fetch internal {inter_name}", repo_dir, log_name, user)
+        # 切换到inter_name分支，并将internal仓库的分支强制 checkout 到当前分支。
+        shell(f"git checkout -B {inter_name} internal/{inter_name}", repo_dir, log_name, user)
+        # 将本地仓库的inter_name分支推送到external仓库的outer_name分支上。
+        shell(f"git push external {inter_name}:{outer_name}", repo_dir, log_name, user)
+        # commit id
+        # result = shell(f"git log HEAD~1..HEAD --oneline", repo_dir, log_name, user)
+        # commit_id = result.stdout.split(" ")[0]
+        result = shell(f'git log -1 --format="%H"', repo_dir, log_name, user)
+        commit_id = result.stdout[0:7]
+        sync_log(LogType.INFO, f'[COMMIT ID: {commit_id}]', log_name, user)
+        return commit_id
+    except Exception as e:
+        raise
 
 
 def outer_to_inter(repo, branch, log_name: str, user: str):
     repo_dir = os.path.join(SYNC_DIR, repo.repo_name)
     inter_name = branch.internal_branch_name
     outer_name = branch.external_branch_name
-    # 从external仓库的指定分支outer_name中获取代码，更新远程分支的信息到本地仓库
-    shell(f"git fetch external {outer_name}", repo_dir, log_name, user)
-    # 切换到本地仓库的outer_name分支，并将origin仓库的outer_name分支强制 checkout 到当前分支。
-    shell(f"git checkout -B {outer_name} external/{outer_name}", repo_dir, log_name, user)
-    # 将本地仓库的outer_name分支推送到internal仓库的inter_name分支上。
-    shell(f"git push internal {outer_name}:{inter_name}", repo_dir, log_name, user)
-    # commit id
-    result = shell(f"git log HEAD~1..HEAD --oneline", repo_dir, log_name, user)
-    commit_id = result.stdout.split(" ")[0]
-    sync_log(LogType.INFO, f'[COMMIT ID: {commit_id}]', log_name, user)
-    return commit_id
+    try:
+        # 从external仓库的指定分支outer_name中获取代码，更新远程分支的信息到本地仓库
+        shell(f"git fetch external {outer_name}", repo_dir, log_name, user)
+        # 切换到本地仓库的outer_name分支，并将origin仓库的outer_name分支强制 checkout 到当前分支。
+        shell(f"git checkout -B {outer_name} external/{outer_name}", repo_dir, log_name, user)
+        # 将本地仓库的outer_name分支推送到internal仓库的inter_name分支上。
+        shell(f"git push internal {outer_name}:{inter_name}", repo_dir, log_name, user)
+        # commit id
+        # result = shell(f"git log HEAD~1..HEAD --oneline", repo_dir, log_name, user)
+        # commit_id = result.stdout.split(" ")[0]
+        result = shell(f'git log -1 --format=%h', repo_dir, log_name, user)
+        commit_id = result.stdout[0:7]
+        sync_log(LogType.INFO, f'[COMMIT ID: {commit_id}]', log_name, user)
+        return commit_id
+    except Exception as e:
+        raise
 
 
 async def sync_repo_task(repo, user):
@@ -176,3 +186,16 @@ async def sync_branch_task(repo, branches, direct, user):
             await log_service.insert_branch_log(repo.repo_name, direct, branch.id, commit_id)
             os.remove(os.path.join(log_path, log_name))
 
+
+async def modify_repos(repo_name, user: str):
+    repo = await sync_repo_dao.get(repo_name=repo_name)
+    not os.path.exists(SYNC_DIR) and os.makedirs(SYNC_DIR)
+    repo_dir = os.path.join(SYNC_DIR, repo.repo_name)
+    log_name = f'update_{repo.repo_name}.log'
+    if os.path.exists(repo_dir):
+        inter_repo_addr = get_repo_address_with_token(repo.internal_repo_address, repo.inter_token)
+        exter_repo_addr = get_repo_address_with_token(repo.external_repo_address, repo.exter_token)
+        # 更新internal远程仓库
+        shell(f'git remote set-url internal {inter_repo_addr}', repo_dir, log_name, user)
+        # 更新external远程仓库
+        shell(f'git remote set-url external {exter_repo_addr}', repo_dir, log_name, user)
