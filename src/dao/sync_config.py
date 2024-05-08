@@ -283,13 +283,16 @@ class LogDAO(BaseDAO, metaclass=Singleton):
                 await session.execute(stmt)
             await session.commit()
 
-    async def get_log(self, repo_name: str, branch_id_list: List[str], page_number: int, page_size: int, create_sort: bool) -> List[LogDTO]:
+    async def get_log(self, repo_name_list: list[str], branch_id_list: List[str], page_number: int, page_size: int, create_sort: bool) -> List[LogDTO]:
         async with self._async_session() as session:
             async with session.begin():
-                branch_id_list = [int(branch_id) for branch_id in branch_id_list]
-                query = select(LogDO).where(LogDO.repo_name == repo_name, LogDO.branch_id.in_(branch_id_list))
-                # stmt = select(LogDO).where(LogDO.repo_name == repo_name, LogDO.branch_id == branch_id)
-                # stmt = stmt.order_by(create_order).offset((page_number - 1) * page_size).limit(page_size)
+                _branch_id_list = [int(branch_id) for branch_id in branch_id_list]
+                if repo_name_list and branch_id_list:
+                    query = select(LogDO).where(and_(LogDO.branch_id.in_(_branch_id_list),
+                                                     LogDO.repo_name.in_(repo_name_list)))
+                else:
+                    query = select(LogDO).where(or_(LogDO.branch_id.in_(_branch_id_list),
+                                                    LogDO.repo_name.in_(repo_name_list)))
                 create_order = LogDO.created_at if create_sort else LogDO.created_at.desc()
                 query = query.order_by(create_order)
                 query = query.offset((page_number - 1) * page_size).limit(page_size)

@@ -130,9 +130,9 @@ async def sync_repo_task(repo, user):
         await sync_branch_task(repo, branches, repo.sync_direction, user)
     else:
         log_name = f'sync_{repo.repo_name}.log'
-        init_repos(repo, log_name, user)
-        sync_log(LogType.INFO, f'************ 执行{repo.repo_name}仓库同步 ************', log_name, user)
         try:
+            init_repos(repo, log_name, user)
+            sync_log(LogType.INFO, f'************ 执行{repo.repo_name}仓库同步 ************', log_name, user)
             if repo.sync_direction == SyncDirect.to_outer:
                 inter_repo_addr = get_repo_address_with_token(repo.internal_repo_address, repo.inter_token)
                 stm = shell(f"git ls-remote --heads {inter_repo_addr}", SYNC_DIR, log_name, user)
@@ -167,10 +167,10 @@ async def sync_branch_task(repo, branches, direct, user):
 
     for branch in branches:
         log_name = f'sync_{repo.repo_name}_{branch.id}.log'
-        init_repos(repo, log_name, user)
-        sync_log(LogType.INFO, f'************ 执行分支同步 ************', log_name, user)
         commit_id = ''
         try:
+            init_repos(repo, log_name, user)
+            sync_log(LogType.INFO, f'************ 执行分支同步 ************', log_name, user)
             if direct == SyncDirect.to_inter:
                 sync_log(LogType.INFO, f'Execute outer to inter {branch.external_branch_name} branch Sync', log_name, user)
                 commit_id = outer_to_inter(repo, branch, log_name, user)
