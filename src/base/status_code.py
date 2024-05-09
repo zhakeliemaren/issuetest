@@ -77,6 +77,7 @@ class SYNCException(Exception):
 class SYNCResponse(BaseModel):
     code_status: Optional[int] = 0
     data: Optional[Data] = None
+    total: Optional[int] = None
     msg: Optional[str] = ''
 
 
