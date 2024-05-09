@@ -4,7 +4,7 @@ from src.do.sync_config import SyncBranchMapping, SyncRepoMapping, LogDO
 from .mysql_ao import MysqlAO
 from src.utils.base import Singleton
 from src.dto.sync_config import AllRepoDTO, GetBranchDTO, SyncRepoDTO, SyncBranchDTO, RepoDTO, BranchDTO, LogDTO
-from typing import List
+from typing import List, Optional
 from src.do.sync_config import SyncDirect, SyncType
 
 
@@ -283,18 +283,21 @@ class LogDAO(BaseDAO, metaclass=Singleton):
                 await session.execute(stmt)
             await session.commit()
 
-    async def get_log(self, repo_name_list: list[str], branch_id_list: List[str], page_number: int, page_size: int, create_sort: bool) -> List[LogDTO]:
+    async def get_log(self, repo_name_list: list[str], branch_id_list: List[str], page_number: int, page_size: int, create_sort: bool):
         async with self._async_session() as session:
             async with session.begin():
                 _branch_id_list = [int(branch_id) for branch_id in branch_id_list]
                 if repo_name_list and branch_id_list:
-                    query = select(LogDO).where(and_(LogDO.branch_id.in_(_branch_id_list),
-                                                     LogDO.repo_name.in_(repo_name_list)))
+                    base_query = select(LogDO).where(and_(LogDO.branch_id.in_(_branch_id_list),
+                                                          LogDO.repo_name.in_(repo_name_list)))
                 else:
-                    query = select(LogDO).where(or_(LogDO.branch_id.in_(_branch_id_list),
-                                                    LogDO.repo_name.in_(repo_name_list)))
+                    base_query = select(LogDO).where(or_(LogDO.branch_id.in_(_branch_id_list),
+                                                         LogDO.repo_name.in_(repo_name_list)))
+                # 获取记录的总条数
+                total_count_query = select(func.count()).select_from(base_query.subquery())
+                total_count = (await session.execute(total_count_query)).scalar()
                 create_order = LogDO.created_at if create_sort else LogDO.created_at.desc()
-                query = query.order_by(create_order)
+                query = base_query.order_by(create_order)
                 query = query.offset((page_number - 1) * page_size).limit(page_size)
                 do_list: List[LogDO] = (await session.execute(query)).scalars().all()
                 datas = []
@@ -310,4 +313,4 @@ class LogDAO(BaseDAO, metaclass=Singleton):
                         update_at=str(do.update_at)
                     )
                     datas.append(data)
-                return datas
+                return total_count, datas

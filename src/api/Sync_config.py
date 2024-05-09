@@ -100,7 +100,6 @@ class SyncDirection(Controller):
             )
         return SYNCResponse(
             code_status=Status.SUCCESS.code,
-            total=len(repos),
             data=repos,
             msg=Status.SUCCESS.msg
         )
@@ -131,7 +130,6 @@ class SyncDirection(Controller):
 
         return SYNCResponse(
             code_status=Status.SUCCESS.code,
-            total=len(branches),
             data=branches,
             msg=Status.SUCCESS.msg
         )
@@ -278,13 +276,14 @@ class SyncDirection(Controller):
         if not data:
             return SYNCResponse(
                 code_status=Status.NOT_DATA.code,
-                data=data,
+                total=data[0],
+                data=data[1],
                 msg=Status.NOT_DATA.msg
             )
         return SYNCResponse(
             code_status=Status.SUCCESS.code,
-            total=len(data),
-            data=data,
+            total=data[0],
+            data=data[1],
             msg=Status.SUCCESS.msg
         )
 
