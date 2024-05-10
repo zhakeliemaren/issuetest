@@ -70,17 +70,17 @@ def init_repos(repo, log_name: str, user: str):
         exter_repo_addr = get_repo_address_with_token(repo.external_repo_address, repo.exter_token)
         if repo.sync_direction == SyncDirect.to_outer:
             # 克隆内部仓库到同步目录下
-            shell(f'git clone -b master {inter_repo_addr} {repo_dir}', SYNC_DIR, log_name, user)
+            shell(f'git clone {inter_repo_addr} {repo_dir}', SYNC_DIR, log_name, user)
         else:
             # 克隆外部仓库到同步目录下
-            shell(f'git clone -b master {exter_repo_addr} {repo_dir}', SYNC_DIR, log_name, user)
+            shell(f'git clone {exter_repo_addr} {repo_dir}', SYNC_DIR, log_name, user)
         # 添加internal远程仓库，并强制使用
         shell(f'git remote add -f internal {inter_repo_addr}', repo_dir, log_name, user)
         # 添加external远程仓库，并强制使用
         shell(f'git remote add -f external {exter_repo_addr}', repo_dir, log_name, user)
 
 
-def inter_to_outer(repo, branch, log_name: str, user: str):
+def inter_to_outer(repo, branch, log_name: str, user: str, force_flag):
     repo_dir = os.path.join(SYNC_DIR, repo.repo_name)
     inter_name = branch.internal_branch_name
     outer_name = branch.external_branch_name
@@ -90,7 +90,10 @@ def inter_to_outer(repo, branch, log_name: str, user: str):
         # 切换到inter_name分支，并将internal仓库的分支强制 checkout 到当前分支。
         shell(f"git checkout -B {inter_name} internal/{inter_name}", repo_dir, log_name, user)
         # 将本地仓库的inter_name分支推送到external仓库的outer_name分支上。
-        shell(f"git push external {inter_name}:{outer_name}", repo_dir, log_name, user)
+        if force_flag:
+            shell(f"git push --force external {inter_name}:{outer_name}", repo_dir, log_name, user)
+        else:
+            shell(f"git push external {inter_name}:{outer_name}", repo_dir, log_name, user)
         # commit id
         # result = shell(f"git log HEAD~1..HEAD --oneline", repo_dir, log_name, user)
         # commit_id = result.stdout.split(" ")[0]
@@ -102,7 +105,7 @@ def inter_to_outer(repo, branch, log_name: str, user: str):
         raise
 
 
-def outer_to_inter(repo, branch, log_name: str, user: str):
+def outer_to_inter(repo, branch, log_name: str, user: str, force_flag):
     repo_dir = os.path.join(SYNC_DIR, repo.repo_name)
     inter_name = branch.internal_branch_name
     outer_name = branch.external_branch_name
@@ -112,7 +115,10 @@ def outer_to_inter(repo, branch, log_name: str, user: str):
         # 切换到本地仓库的outer_name分支，并将origin仓库的outer_name分支强制 checkout 到当前分支。
         shell(f"git checkout -B {outer_name} external/{outer_name}", repo_dir, log_name, user)
         # 将本地仓库的outer_name分支推送到internal仓库的inter_name分支上。
-        shell(f"git push internal {outer_name}:{inter_name}", repo_dir, log_name, user)
+        if force_flag:
+            shell(f"git push --force internal {outer_name}:{inter_name}", repo_dir, log_name, user)
+        else:
+            shell(f"git push internal {outer_name}:{inter_name}", repo_dir, log_name, user)
         # commit id
         # result = shell(f"git log HEAD~1..HEAD --oneline", repo_dir, log_name, user)
         # commit_id = result.stdout.split(" ")[0]
@@ -124,7 +130,7 @@ def outer_to_inter(repo, branch, log_name: str, user: str):
         raise
 
 
-async def sync_repo_task(repo, user):
+async def sync_repo_task(repo, user, force_flag):
     if repo.sync_granularity == SyncType.one:
         branches = await sync_branch_dao.sync_branch(repo_id=repo.id)
         await sync_branch_task(repo, branches, repo.sync_direction, user)
@@ -142,7 +148,7 @@ async def sync_repo_task(repo, user):
                         branch_name = branch.split('/')[-1].strip()
                         branch = SyncBranchDTO(enable=1, internal_branch_name=branch_name, external_branch_name=branch_name)
                         sync_log(LogType.INFO, f'Execute inter to outer {branch_name} branch Sync', log_name, user)
-                        inter_to_outer(repo, branch, log_name, user)
+                        inter_to_outer(repo, branch, log_name, user, force_flag)
             else:
                 exter_repo_addr = get_repo_address_with_token(repo.external_repo_address, repo.exter_token)
                 stm = shell(f"git ls-remote --heads {exter_repo_addr}", SYNC_DIR, log_name, user)
@@ -152,7 +158,7 @@ async def sync_repo_task(repo, user):
                         branch_name = branch.split('/')[-1].strip()
                         branch = SyncBranchDTO(enable=1, internal_branch_name=branch_name, external_branch_name=branch_name)
                         sync_log(LogType.INFO, f'Execute outer to inter {branch_name} branch Sync', log_name, user)
-                        outer_to_inter(repo, branch, log_name, user)
+                        outer_to_inter(repo, branch, log_name, user, force_flag)
             sync_log(LogType.INFO, f'************ {repo.repo_name}仓库同步完成 ************', log_name, user)
         finally:
             if config.DELETE_SYNC_DIR:
@@ -163,7 +169,7 @@ async def sync_repo_task(repo, user):
             os.remove(os.path.join(log_path, log_name))
 
 
-async def sync_branch_task(repo, branches, direct, user):
+async def sync_branch_task(repo, branches, direct, user, force_flag):
 
     for branch in branches:
         log_name = f'sync_{repo.repo_name}_{branch.id}.log'
@@ -173,10 +179,10 @@ async def sync_branch_task(repo, branches, direct, user):
             sync_log(LogType.INFO, f'************ 执行分支同步 ************', log_name, user)
             if direct == SyncDirect.to_inter:
                 sync_log(LogType.INFO, f'Execute outer to inter {branch.external_branch_name} branch Sync', log_name, user)
-                commit_id = outer_to_inter(repo, branch, log_name, user)
+                commit_id = outer_to_inter(repo, branch, log_name, user, force_flag)
             else:
                 sync_log(LogType.INFO, f'Execute inter to outer {branch.internal_branch_name} branch Sync', log_name, user)
-                commit_id = inter_to_outer(repo, branch, log_name, user)
+                commit_id = inter_to_outer(repo, branch, log_name, user, force_flag)
             sync_log(LogType.INFO, f'************ 分支同步完成 ************', log_name, user)
         finally:
             if config.DELETE_SYNC_DIR:

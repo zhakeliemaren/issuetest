@@ -137,7 +137,8 @@ class SyncDirection(Controller):
     @router.post("/repo/{repo_name}", response_model=SYNCResponse, description='执行仓库同步')
     async def sync_repo(
             self, request: Request, user: str = Depends(user),
-            repo_name: str = Path(..., description="仓库名称")
+            repo_name: str = Path(..., description="仓库名称"),
+            force_flag: bool = Query(False, description="是否强制同步")
     ):
         api_log(LogType.INFO, f"用户 {user} 使用 POST 方法访问接口 {request.url.path} ", user)
         repo = await self.service.get_repo(repo_name=repo_name)
@@ -147,7 +148,7 @@ class SyncDirection(Controller):
             return SYNCResponse(code_status=Status.NOT_ENABLE.code, msg=Status.NOT_ENABLE.msg)
 
         try:
-            await sync_repo_task(repo, user)
+            await sync_repo_task(repo, user, force_flag)
         except GITMSGException as GITError:
             return SYNCResponse(
                 code_status=GITError.status,
@@ -164,7 +165,8 @@ class SyncDirection(Controller):
             self, request: Request, user: str = Depends(user),
             repo_name: str = Path(..., description="仓库名称"),
             branch_name: str = Path(..., description="分支名称"),
-            sync_direct: int = Query(..., description="同步方向: 1 表示内部仓库同步到外部, 2 表示外部仓库同步到内部")
+            sync_direct: int = Query(..., description="同步方向: 1 表示内部仓库同步到外部, 2 表示外部仓库同步到内部"),
+            force_flag: bool = Query(False, description="是否强制同步")
     ):
         api_log(LogType.INFO, f"用户 {user} 使用 POST 方法访问接口 {request.url.path} ", user)
         repo = await self.service.get_repo(repo_name=repo_name)
@@ -179,7 +181,7 @@ class SyncDirection(Controller):
             return SYNCResponse(code_status=Status.NOT_ENABLE.code, msg=Status.NOT_ENABLE.msg)
 
         try:
-            await sync_branch_task(repo, branches, direct, user)
+            await sync_branch_task(repo, branches, direct, user, force_flag)
         except GITMSGException as GITError:
             return SYNCResponse(
                 code_status=GITError.status,
