@@ -1,4 +1,5 @@
 import os
+import shutil
 import re
 import shlex
 import subprocess
@@ -34,12 +35,17 @@ def get_repo_address_with_token(address: str, token: str) -> str:
 
         if address.startswith('https'):
             owner_name = address[8:].split("/")[1]
-            return address[:8] + owner_name + ":" + token + '@' + address[8:]
+            return address[:8] + "oauth2:" + token + '@' + address[8:]
         elif address.startswith('http'):
             owner_name = address[7:].split("/")[1]
-            return address[:7] + owner_name + ":" + token + '@' + address[7:]
+            return address[:7] + "oauth2:" + token + '@' + address[7:]
     except Exception as e:
         print(e)
+
+
+def delete_repo_dir(repo_name, user: str):
+    repo_dir = os.path.join(SYNC_DIR, repo_name)
+    os.path.exists(repo_dir) and shutil.rmtree(repo_dir)
 
 
 def shell(cmd, dire: str, log_name: str, user: str):

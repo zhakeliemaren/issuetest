@@ -16,7 +16,7 @@ from src.router import SYNC_CONFIG as router
 from src.do.sync_config import SyncDirect
 from src.dto.sync_config import SyncRepoDTO, SyncBranchDTO, LogDTO, ModifyRepoDTO
 from src.service.sync_config import SyncService, LogService
-from src.service.cronjob import sync_repo_task, sync_branch_task, modify_repos
+from src.service.cronjob import sync_repo_task, sync_branch_task, modify_repos, delete_repo_dir
 from src.base.status_code import Status, SYNCResponse, SYNCException
 from src.service.cronjob import GITMSGException
 
@@ -197,6 +197,15 @@ class SyncDirection(Controller):
     ):
         api_log(LogType.INFO, f"用户 {user} 使用 DELETE 方法访问接口 {request.url.path} ", user)
         data = await self.service.delete_repo(repo_name=repo_name)
+        try:
+            if data.code_status == 0:
+                delete_repo_dir(repo_name, user)
+                await self.log_service.delete_logs(repo_name=repo_name)
+        except GITMSGException as GITError:
+            return SYNCResponse(
+                code_status=GITError.status,
+                msg=GITError.msg
+            )
         return SYNCResponse(
             code_status=data.code_status,
             msg=data.status_msg

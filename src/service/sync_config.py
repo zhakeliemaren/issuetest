@@ -215,3 +215,11 @@ class LogService(Service):
         logs = await self.sync_log_dao.get_log(repo_name_list=repo_name_list, branch_id_list=branch_id_list,
                                                page_number=page_num, page_size=page_size, create_sort=create_sort)
         return logs
+
+    async def delete_logs(self, repo_name: str) -> SYNCException:
+        logs = await self.sync_log_dao.filter(repo_name=repo_name)
+        if logs:
+            for log in logs:
+                await self.sync_log_dao.delete(log)
+
+        return SYNCException(Status.SUCCESS)
