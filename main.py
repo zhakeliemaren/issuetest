@@ -25,7 +25,7 @@ app.include_router(LOG)
 app.include_router(AUTH)
 app.include_router(SYNC_CONFIG)
 
-app.mount("/", StaticFiles(directory="web/dist"), name="static")
+# app.mount("/", StaticFiles(directory="web/dist"), name="static")
 
 if __name__ == '__main__':
     # workers 参数仅在命令行使用uvicorn启动时有效 或使用环境变量 WEB_CONCURRENCY
