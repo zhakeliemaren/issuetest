@@ -112,14 +112,14 @@ class SyncService(Service):
         if repo is None:
             return SYNCException(Status.REPO_NOTFOUND)
         update_fields = {}
-        if dto.internal_repo_address is not None:
-            if not base.check_addr(dto.internal_repo_address):
-                return SYNCException(Status.REPO_ADDR_ILLEGAL)
-            update_fields['internal_repo_address'] = dto.internal_repo_address
-        if dto.external_repo_address is not None:
-            if not base.check_addr(dto.external_repo_address):
-                return SYNCException(Status.REPO_ADDR_ILLEGAL)
-            update_fields['external_repo_address'] = dto.external_repo_address
+        # if dto.internal_repo_address is not None:
+        #     if not base.check_addr(dto.internal_repo_address):
+        #         return SYNCException(Status.REPO_ADDR_ILLEGAL)
+        update_fields['internal_repo_address'] = dto.internal_repo_address
+        # if dto.external_repo_address is not None:
+        #     if not base.check_addr(dto.external_repo_address):
+        #         return SYNCException(Status.REPO_ADDR_ILLEGAL)
+        update_fields['external_repo_address'] = dto.external_repo_address
         if dto.inter_token is not None:
             update_fields['inter_token'] = dto.inter_token
         if dto.exter_token is not None:

@@ -38,11 +38,11 @@ class SyncDirection(Controller):
             dto: SyncRepoDTO = Body(..., description="绑定同步仓库信息")
     ):
         api_log(LogType.INFO, f"用户 {user} 使用 POST 方法访问接口 {request.url.path} ", user)
-        if not base.check_addr(dto.external_repo_address) or not base.check_addr(dto.internal_repo_address):
-            return SYNCResponse(
-                code_status=Status.REPO_ADDR_ILLEGAL.code,
-                msg=Status.REPO_ADDR_ILLEGAL.msg
-            )
+        # if not base.check_addr(dto.external_repo_address) or not base.check_addr(dto.internal_repo_address):
+        #     return SYNCResponse(
+        #         code_status=Status.REPO_ADDR_ILLEGAL.code,
+        #         msg=Status.REPO_ADDR_ILLEGAL.msg
+        #     )
 
         if dto.sync_granularity not in [1, 2]:
             return SYNCResponse(code_status=Status.SYNC_GRAN_ILLEGAL.code, msg=Status.SYNC_GRAN_ILLEGAL.msg)
