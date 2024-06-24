@@ -139,7 +139,7 @@ def outer_to_inter(repo, branch, log_name: str, user: str, force_flag):
 async def sync_repo_task(repo, user, force_flag):
     if repo.sync_granularity == SyncType.one:
         branches = await sync_branch_dao.sync_branch(repo_id=repo.id)
-        await sync_branch_task(repo, branches, repo.sync_direction, user)
+        await sync_branch_task(repo, branches, repo.sync_direction, user, force_flag)
     else:
         log_name = f'sync_{repo.repo_name}.log'
         try:
