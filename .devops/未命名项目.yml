@@ -1,0 +1,66 @@
+version: 2
+name: 未命名项目
+description: ""
+global:
+  concurrent: 1
+trigger:
+  webhook: gitlink@1.0.0
+  event:
+    - ref: push
+      ruleset:
+        - param-ref: branch
+          operator: EQ
+          value: '"master"'
+      ruleset-operator: AND
+workflow:
+  - ref: start
+    name: 开始
+    task: start
+  - ref: git_clone_0
+    name: git clone
+    task: git_clone@1.2.9
+    input:
+      username: ((yuyebo.gitlink_username))
+      password: ((yuyebo.gitlink_usercode))
+      remote_url: '"https://gitlink.org.cn/yuyebo22/reposync.git"'
+      ref: '"refs/heads/master"'
+      commit_id: '""'
+      depth: 1
+    needs:
+      - start
+  - ref: docker_image_build_0
+    name: docker镜像构建
+    task: docker_image_build@1.6.0
+    input:
+      docker_username: ((xuyuanpeng.user))
+      docker_password: ((xuyuanpeng.key))
+      image_name: '"crpi-8e4d3x02j0ndtmyu.cn-shanghai.personal.cr.aliyuncs.com/aishangliying/xudapao"'
+      image_tag: '"latest"'
+      registry_address: '"crpi-8e4d3x02j0ndtmyu.cn-shanghai.personal.cr.aliyuncs.com"'
+      docker_file: '"Dockerfile"'
+      docker_build_path: '"."'
+      workspace: git_clone_0.git_path
+      image_push: true
+      build_args: '""'
+    needs:
+      - git_clone_0
+  - ref: ssh_cmd_0
+    name: ssh执行命令
+    task: ssh_cmd@1.1.1
+    input:
+      ssh_pass: ((ssh.ssh))
+      ssh_ip: '"47.98.110.189"'
+      ssh_port: '"22"'
+      ssh_user: '"root"'
+      ssh_cmd: '"docker stop xudapao || true && docker rm xudapao || true && docker
+        pull
+        crpi-8e4d3x02j0ndtmyu.cn-shanghai.personal.cr.aliyuncs.com/aishangliying/xudapao:latest;
+        docker run -d -p 3000:3000 --name xudapao
+        crpi-8e4d3x02j0ndtmyu.cn-shanghai.personal.cr.aliyuncs.com/aishangliying/xudapao:latest"'
+    needs:
+      - docker_image_build_0
+  - ref: end
+    name: 结束
+    task: end
+    needs:
+      - ssh_cmd_0
