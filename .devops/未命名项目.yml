@@ -48,10 +48,10 @@ workflow:
       ssh_ip: '"47.98.110.189"'
       ssh_port: '"22"'
       ssh_user: '"root"'
-      ssh_cmd: '"docker stop yunwei || true && docker rm yunwei || true && docker pull
-        registry.cn-hangzhou.aliyuncs.com/dmzchangsha/yunwei:latest; docker run
-        -d -p 8089:8000 --name yunwei
-        registry.cn-hangzhou.aliyuncs.com/dmzchangsha/yunwei:latest"'
+      ssh_cmd: "\"docker stop yunwei || true && docker rm yunwei || true && docker
+        pull registry.cn-hangzhou.aliyuncs.com/dmzchangsha/yunwei:latest; docker
+        run -d -p 8089:8000 --name yunwei -e BOOT_MODE='app'
+        registry.cn-hangzhou.aliyuncs.com/dmzchangsha/yunwei:latest\""
     needs:
       - docker_image_build_0
   - ref: end
