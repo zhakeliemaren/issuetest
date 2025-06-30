@@ -33,7 +33,7 @@ workflow:
       registry_address: '"crpi-8e4d3x02j0ndtmyu.cn-shanghai.personal.cr.aliyuncs.com"'
       docker_file: '"Dockerfile"'
       docker_build_path: '"."'
-      workspace: '"."'
+      workspace: git_clone_0.git_path
       image_push: true
       build_args: '""'
     needs:
