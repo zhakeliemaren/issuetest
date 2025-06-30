@@ -48,7 +48,7 @@ workflow:
       ssh_ip: '"47.98.110.189"'
       ssh_port: '"22"'
       ssh_user: '"root"'
-      ssh_cmd: '"docker stop dmzchangsha || true && docker rm xudapao || true &&
+      ssh_cmd: '"docker stop dmzchangsha || true && docker rm dmzchangsha || true &&
         docker pull registry.cn-hangzhou.aliyuncs.com/dmzchangsha/yunwei:latest;
         docker run -d -p 8000:8089 --name dmzchangsha
         registry.cn-hangzhou.aliyuncs.com/dmzchangsha/yunwei:latest"'
