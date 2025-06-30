@@ -50,7 +50,7 @@ workflow:
       ssh_user: '"root"'
       ssh_cmd: '"docker stop dmzchangsha || true && docker rm dmzchangsha || true &&
         docker pull registry.cn-hangzhou.aliyuncs.com/dmzchangsha/yunwei:latest;
-        docker run -d -p 8000:8089 --name dmzchangsha
+        docker run -d -p 8089:8000 --name dmzchangsha
         registry.cn-hangzhou.aliyuncs.com/dmzchangsha/yunwei:latest"'
     needs:
       - docker_image_build_0
