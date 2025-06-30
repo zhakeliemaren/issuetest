@@ -28,6 +28,8 @@ workflow:
     name: docker镜像构建
     task: docker_image_build@1.6.0
     input:
+      docker_username: ((dmz.aliyun_name))
+      docker_password: ((dmz.aliyun_key))
       image_name: '"crpi-8e4d3x02j0ndtmyu.cn-shanghai.personal.cr.aliyuncs.com/aishangliying/xudapao"'
       image_tag: '"latest"'
       registry_address: '"crpi-8e4d3x02j0ndtmyu.cn-shanghai.personal.cr.aliyuncs.com"'
@@ -42,6 +44,7 @@ workflow:
     name: ssh执行命令
     task: ssh_cmd@1.1.1
     input:
+      ssh_pass: ((dmz.ssh_key))
       ssh_ip: '"47.98.110.189"'
       ssh_port: '"22"'
       ssh_user: '"root"'
